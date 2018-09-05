@@ -1,0 +1,13 @@
+Package: backpay
+Type: Package
+Title: Identify 'pre-defined'  expression PAtterns in transcriptomic/proteomic data 
+Version: 1.0
+Date: 2018-09-05
+Author: Thierry Chekouo
+Maintainer: Thierry Chekouo <thierry.chekouotekou@ucalgary.ca>
+Description: The backpay package implements the BACkPAy (BAyesian mixture model for identifying Clusters of features (e.g. proteins) with similar 'pre-defined' expression PAtterns) algorithm. 
+SystemRequirements: GSL (GNU Scientific Library)
+License: GPL (>= 2.0)
+Imports: scatterplot3d,AUC
+RoxygenNote: 6.1.0
+Encoding: UTF-8
