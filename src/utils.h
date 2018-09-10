@@ -1,4 +1,6 @@
-void save1dBool(char *filename,int n,_Bool * data);
+#include <stddef.h>
+
+void multinomial (size_t K,unsigned int  N, const double p[], unsigned int n[]); 
 void sortd(int n,double *x,int *idx);
 double auc(int n, double * esti,_Bool class[n]);
 void Center(int nR,int nC,double ** x);

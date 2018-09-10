@@ -50,7 +50,7 @@ patternname=patternname,thres=thres)
 \examples{
 library(backpay)
 ##---- Simulate data
-Gen=Generate(NbrModCov=2,NbrGps=3,p=2000,nbrDuplic=1,seed=1)
+Gen=Generate(NbrModCov=2,NbrGps=3,p=1000,nbrDuplic=1,seed=1)
 data=Gen$data
 IndVar=as.factor(Gen$Ind.Var);
 ExpVar=as.factor(Gen$Expe.Var);

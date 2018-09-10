@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <gsl/gsl_sf.h>
 #include <gsl/gsl_cdf.h>
 #include <string.h>
@@ -7,8 +8,11 @@
 #include <math.h>
 #include "utils.h"
 #include "myfunction.h"
+#include <R.h>
+#include <Rmath.h>
 
 void generedata(int *nbrTimeMod, int *nbrResistMod1,int *TimePoint,int * Resist, int *p1, double * yv,int *nbrsampl1,double* beta,int *seed,int * Rho,double* sig){
+ GetRNGstate();
 int l,h,i,j,l1;
 int p=p1[0];
 int nbrsampl=nbrsampl1[0];
@@ -89,6 +93,7 @@ rho[l1]=bmatrix(0, p-1, 0, H-1);
 for (i=0;i<p;i++){
  unsigned int rho1[H];
 gsl_ran_multinomial (r1, H,1,probInit,rho1);
+// multinomial(H,1,probInit,rho1);
 for (h=0;h<H;h++){
 rho[l1][i][h]=rho1[h];
 Rho[l1*p*H+i*H+h]=rho[l1][i][h];
@@ -101,6 +106,7 @@ double mu[H][p];
 for (h=0;h<H;h++){
 for (i=0;i<p;i++){
 mu[h][i]=gsl_ran_gaussian (r, 0.1);
+// mu[h][i]=rnorm (0, 0.1);
 }
 }
 double err=0;
@@ -117,6 +123,7 @@ xb+=TimeCovRes[l1][j][l]*SignCoef[h][l]*beta[i];
 }
 y[i][j1]=mu[h][i]+xb;
 err=gsl_ran_gaussian (r, sig[i]);
+// err=rnorm (0, sig[i]);
 }
 }
 y[i][j1]+=err;
@@ -143,4 +150,5 @@ free_bmatrix(rho[l1],0, p-1, 0, H-1);//free(nbrprot);
 gsl_rng_free (r1);free(rho);
 gsl_rng_free (r);
 free_dmatrix(y,0, p-1,0,n-1);
+PutRNGstate();
 }

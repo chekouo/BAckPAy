@@ -71,7 +71,7 @@ The function will return several R objects, which can be assigned to a variable.
 \examples{
 library(backpay)
 ##---- Simulate data
-Gen=Generate(NbrModCov=2,NbrGps=3,p=8000,nbrDuplic=1,seed=1)
+Gen=Generate(NbrModCov=2,NbrGps=3,p=1000,nbrDuplic=1,seed=1)
 data=Gen$data
 IndVar=as.factor(Gen$Ind.Var);
 ExpVar=as.factor(Gen$Expe.Var);

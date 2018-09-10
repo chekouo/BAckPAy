@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <gsl/gsl_sf.h>
 #include <gsl/gsl_cdf.h>
 #include <string.h>
@@ -5,6 +6,7 @@
 #include <gsl/gsl_randist.h>
 #include <stdbool.h>
 #include <math.h>
+#include <Rmath.h>
 #include "utils.h"
 #include "myfunction.h"
 int Rho(int h_old,double * data, _Bool ** Time, double **beta,double *mu, double *sigma2,double *alpha,double sumalpha,double *C,_Bool* rho, int *nbrprot,int p,int n,int nbrcov,int H, int **signCoef, const gsl_rng * r){
@@ -43,6 +45,7 @@ double  prob[H];double sumprob=0;
 free(logpl);
 unsigned int rho1[H];
 gsl_ran_multinomial (r, H,1,prob,rho1);
+// multinomial(H,1,prob,rho1);
 int h1=h_old;
 for (h=0;h<H;h++){
 rho[h]=rho1[h];
@@ -83,6 +86,7 @@ muh+=(1-N[re]*(C/(N[re]*C+1)))*yy;
 muh=sigma2mu*muh/sigma2;
 
 return muh+gsl_ran_gaussian (r, sqrt(sigma2mu)); 
+//return muh+rnorm(0,sqrt(sigma2mu));
 
 }
 
@@ -116,6 +120,7 @@ bsig+=sumyi2-(C/(N[re]*C+1))*sum2yi;
 bsig=b+0.5*bsig;
 
 return 1/gsl_ran_gamma (r, asig, 1/bsig);
+//return 1/rgamma (asig, 1/bsig);
 }
 
 double Beta(double *** data,_Bool *** Time,int h,int l, double *beta,double sigma2,double mu,double C,double c_beta,_Bool*** rho, int *nbrprot,int *P,int* N,int nbrcov, int nbrgrp,double lower,int *signCoef,const gsl_rng * r){
@@ -173,6 +178,9 @@ double xx,x;
 if (nbrprot[h]>1){
 xx=x=0;double loggamma=0;
 loggamma= gsl_sf_lngamma (nbrprot[h]+alpha[h]);
+ //Rprintf("LogGamma1 is %lf\n",loggamma);
+//loggamma=lgammafn(nbrprot[h]+alpha[h]);
+ // Rprintf("LogGamma2 is %lf\n",loggamma);
 for (re=0;re<nbrgrp;re++){
 for (i=0;i<P[re];i++){
 if (rho[re][i][h]==1){
@@ -216,6 +224,7 @@ double var=0.01;
 double betaold=lower/var;
 double alphaold=betaold*lower;
 double lowerprop=gsl_ran_gamma (r, alphaold, 1/betaold);
+//double lowerprop=rgamma (alphaold, 1/betaold);
 double betanew=lowerprop/var;
 double alphanew=lowerprop*betanew;
 
@@ -223,8 +232,11 @@ double logliknew=0;double loglikold=0;
 loglikold=-0.5*pow(beta-lower,2)/(pow(c_beta,2)*sigma2);
 logliknew=-0.5*pow(beta-lowerprop,2)/(pow(c_beta,2)*sigma2);
 double difflogprop=log(gsl_ran_gamma_pdf(lower,alphanew,1/betanew))-log(gsl_ran_gamma_pdf(lowerprop,alphaold,1/betaold));
+//double difflogprop=dgamma(lower,alphanew,1/betanew,1)-dgamma(lowerprop,alphaold,1/betaold,1);
+
 double diff=difflogprop+logliknew-loglikold+(a-1)*(log(lowerprop)-log(lower))-b*(lowerprop-lower);
 double  uni=gsl_ran_flat (r, 0, 1);
+//double  uni=runif(0,1);
 if (log(uni)<diff){
 lower=lowerprop;
 *accept+=1;

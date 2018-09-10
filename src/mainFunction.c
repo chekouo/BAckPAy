@@ -1,6 +1,7 @@
 /*BACkPAy:  C main function for identifying expression patterns
  * */
 
+#include <stddef.h>
 #include <time.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,7 +13,9 @@
 #include "utils.h"
 #include "myfunction.h"
 #include <R.h>
+#include <Rmath.h>
 void  mainfunction(int *p1, int *n1,int *NbrGps1,double * ProtExp1, int * Time, int  * Resist,int *sample1,int *burnin1,double *atau, double *btau, double *c_h,double *b_beta,  double * rhoMean1, double * ProbProt1,double * probDiff) {
+GetRNGstate();
 //Time is the independent variable
 //resist is the experimental variable (confounding variable)
 int i,h,l,j,j1,l1;
@@ -164,6 +167,7 @@ for (l1=0;l1<NbrGps;l1++){
 for (i=0;i<P[l1];i++){
  unsigned int rho1[H];
 gsl_ran_multinomial (r, H,1,probInit,rho1);
+//multinomial(H,1,probInit,rho1);
 for (h=0;h<H;h++){
 rho[l1][i][h]=rho1[h];
 }
@@ -260,6 +264,7 @@ if (nbrprot[h]>=2){
 lower[h][l]=Lower1(lower[h][l], beta[h][l],sigma2[h],c_beta, al,bl,&acceptLower,r);
 } else {
 lower[h][l]=gsl_ran_gamma (r, al, 1/bl);
+//lower[h][l]=rgamma (al, 1/bl);
 }
 beta[h][l]=Beta(ProtExpreResist,TimeCovRes,h,l, beta[h],sigma2[h], mu[h],C[h], c_beta, rho, nbrprotRes[h], P, N,NbrCov,NbrGps, lower[h][l],SignCoef[h], r);
 if (s>=burnin){
@@ -358,4 +363,5 @@ free(N);free(res);
 //double  time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
   //  printf("\n\nTime taken in seconds is %f\n",time_taken);
    // printf("\nTime taken in minutes is %f\n",time_taken/60);
+PutRNGstate();
 }

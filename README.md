@@ -8,6 +8,8 @@ For more information please contact thierry.chekouotekou@ucalgary.ca
 
 Installation
 
+Please refer to the manual InstallationForUsers.pdf for more details.
+
 1. SystemRequirements: GSL (GNU Scientific Library) C library.
 
 2. Using the 'devtools' package:

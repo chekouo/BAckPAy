@@ -57,7 +57,7 @@ Thierry Chekouo et al (2018), \emph{Investigating Protein Patterns in Human Leuk
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 %}
 \examples{
-Gen=Generate(NbrModCov=2,NbrGps=3,p=8000,nbrDuplic=1,seed=1)
+Gen=Generate(NbrModCov=2,NbrGps=3,p=1000,nbrDuplic=1,seed=1)
 dim(Gen$data)
 round(head(Gen$data),digits=2)
 IndVar=as.factor(Gen$Ind.Var);

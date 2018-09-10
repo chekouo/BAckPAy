@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <stdbool.h>
@@ -6,6 +7,46 @@
 #include <math.h>
 #include "utils.h"
 #include <R.h>
+#include <Rmath.h>
+
+void multinomial (size_t K,unsigned int  N, const double p[], unsigned int n[])
+{
+   GetRNGstate();
+  size_t k;
+  double norm = 0.0;
+  double sum_p = 0.0;
+  unsigned int sum_n = 0;
+
+  /* p[k] may contain non-negative weights that do not sum to 1.0.
+   * Even a probability distribution will not exactly sum to 1.0
+   * due to rounding errors. 
+   */
+
+  for (k = 0; k < K; k++)
+    {
+      norm += p[k];
+    }
+
+  for (k = 0; k < K; k++)
+    {
+      if (p[k] > 0.0)
+        {
+          n[k] = rbinom (N - sum_n,p[k] / (norm - sum_p));
+        }
+      else
+        {
+          n[k] = 0;
+        }
+
+      sum_p += p[k];
+      sum_n += n[k];
+    }
+ PutRNGstate();
+}
+
+
+
+
 void sortd(int n,double *x,int *idx)
 {
 int i,j;
@@ -226,12 +267,16 @@ double Truncate(double mu,double sd, double lower, const gsl_rng * r){
 double lowern=(lower-mu)/sd;
 double alphaopt=(lowern+sqrt(pow(lowern,2)+4))/2;
 double z=lowern+gsl_ran_exponential (r, 1/alphaopt);
+//double z=lowern+rexp (1/alphaopt);
 double qz=exp(-pow(z-alphaopt,2)/2);
 double u=gsl_ran_flat (r, 0,1);
+//double u=runif(0,1);
 while (u>qz){
 z=lowern+gsl_ran_exponential (r, 1/alphaopt);
+// z=lowern+rexp (1/alphaopt);
 qz=exp(-pow(z-alphaopt,2)/2);
 u=gsl_ran_flat (r, 0,1);
+//u=runif(0,1);
 }
 return z*sd+mu;
 }
