@@ -49,6 +49,10 @@ Usage and Example, see the pdf manual for more details.
 > rhodiffTrue=1-apply(KnownRho[,,(H+1)/2],2,prod)
 
 ### AUC for detecting differential features
+<<<<<<< HEAD
+=======
+
+>>>>>>> c95c051bae9eb41de9c2925b917d4990e67c5c3b
 > AUC=auc(roc(Result$probDiff, as.factor(rhodiffTrue)))
 
 > AUC
@@ -56,12 +60,19 @@ Usage and Example, see the pdf manual for more details.
 > Names=Nameclust(NbrModCov=2, NbrGps=3)
 
 > Names$namegroup[1]
+<<<<<<< HEAD
+=======
+
+>>>>>>> c95c051bae9eb41de9c2925b917d4990e67c5c3b
 ### [1] "Up-Up-Up"
 ### We represent the pattern Up-Up-Up.
 > PlotResult= PlotThreeD(data=data,Ind.Var = IndVar, Expe.Var = ExpVar,ProbProtGrp=Result$ProbProtGrp,patternname=Names$namegroup[1],thres=0.5)
 
 ### Reference
+<<<<<<< HEAD
 
+=======
+>>>>>>> c95c051bae9eb41de9c2925b917d4990e67c5c3b
 Thierry Chekouo et al (2018), Investigating Protein Patterns in Human Leukemia Cell Line Experiments:
 A Bayesian Approach for Extremely Small Sample Sizes, submitted.
 
