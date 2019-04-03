@@ -8,6 +8,6 @@ Maintainer: Thierry Chekouo <thierry.chekouotekou@ucalgary.ca>
 Description: The backpay package implements the BACkPAy (BAyesian mixture model for identifying Clusters of features (e.g. proteins) with similar 'pre-defined' expression PAtterns) algorithm. 
 SystemRequirements: GSL (GNU Scientific Library)
 License: GPL (>= 2.0)
-Imports: scatterplot3d,AUC
+Imports: scatterplot3d,AUC, mvtnorm,flux
 RoxygenNote: 6.1.0
 Encoding: UTF-8

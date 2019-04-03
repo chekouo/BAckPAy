@@ -1,8 +1,9 @@
 #' @useDynLib backpay mainfunction
 #' @export
 BAckPay <-
-function(data=data, Ind.Var=Ind.Var, Expe.Var=NULL, sample=10000, burnin=1000,
-         a.tau=a.tau,b.tau=b.tau,c.h=0.5,b.beta=0.1) {
+function(data=data, Ind.Var=Ind.Var, Expe.Var=NULL, sample=10000, burnin=1000,a.tau=a.tau,b.tau=b.tau,c.h=0.5,b.beta=0.1,alpha.h=c(20,20)) {
+  #function(data=data, Ind.Var=Ind.Var, Expe.Var=NULL, sample=10000, burnin=1000,
+           #a.tau=a.tau,b.tau=b.tau,c.h=0.5,b.beta=0.1)
 if (ncol(data)!=length(Ind.Var)){
   stop("The number of columns in the data matrix must be the same as the length of vector Ind.Var")
 }
@@ -52,6 +53,7 @@ for (x in 1:length(uniqExp.Var)) {
 }
 
 IndVar=Indvar1[order(Expe.Var,Ind.Var)];
+ExpVar=ExpVar[order(Expe.Var,Ind.Var)]
 data=data[,order(Expe.Var,Ind.Var)]
 
 data1=as.vector(t(data));
@@ -66,14 +68,17 @@ comb=H^NbrGps;
 rhoMean1=rep(0,p*NbrGps*H)
 ProbProt1=rep(0,p*comb);
 probDiff=rep(0,p);
+alphah=rep(alpha.h[1],H);alphah[(H+1)/2]=alpha.h[2];
 result <- .C("mainfunction",
                p1=as.integer(p),n1=as.integer(n),NbrGps1=as.integer(NbrGps),ProtExp1=as.double(data1),
                Time=as.integer(IndVar),Resist=as.integer(ExpVar),sample=as.integer(sample), 
 		burnin=as.integer(burnin),atau=as.double(a.tau),btau=as.double(b.tau),c_h=as.double(c.h),
-		b_beta=as.double(b.beta),rhoMean1=as.double(rhoMean1), 
-		ProbProt1=as.double(ProbProt1),probDiff=as.double(probDiff))
+		b_beta=as.double(b.beta),alpha=as.double(alphah),rhoMean1=as.double(rhoMean1), ProbProt1=as.double(ProbProt1),
+		probDiff=as.double(probDiff),BetaMean1=as.double(rep(0,NbrCov*H)), sigma2Mean=as.double(rep(0,H)),
+		muMean=as.double(rep(0,H)),Pih=as.double(rep(0,H)))
 #,PACKAGE = "BAckPay");
 ProbProtGrp=matrix(result$ProbProt1,comb,byrow=T);
+BetaMean=matrix(result$BetaMean1,H,byrow=T)
 #ProbProtGrp=matrix(result$ProbProt1,p,byrow=T);
 NameClust=Nameclust(NbrCov+1,NbrGps);
 rownames(ProbProtGrp)=NameClust$namegroup
@@ -91,5 +96,8 @@ names(probDiff)=rownames(data);
 }
 q.valDiff=sapply(probDiff, function(t) sum(1-probDiff[probDiff>=t])/sum(probDiff>=t))
 names(q.valDiff)=rownames(data);
-return(list(probDiff=probDiff,q.valueDiff=q.valDiff,rhoMean=rhoMean,ProbProtGrp=ProbProtGrp))
+return(list(data=data,ExpVar=ExpVar,IndVar=IndVar,probDiff=probDiff,
+            q.valueDiff=q.valDiff,rhoMean=rhoMean,ProbProtGrp=ProbProtGrp, 
+            BetaPost=BetaMean, muPost=result$muMean,sigmaPost=result$sigma2Mean,
+            Pih=result$Pih/sum(result$Pih)))
 }

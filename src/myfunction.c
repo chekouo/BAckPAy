@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <Rmath.h>
+
 #include "utils.h"
 #include "myfunction.h"
 int Rho(int h_old,double * data, _Bool ** Time, double **beta,double *mu, double *sigma2,double *alpha,double sumalpha,double *C,_Bool* rho, int *nbrprot,int p,int n,int nbrcov,int H, int **signCoef, const gsl_rng * r){
@@ -123,7 +124,69 @@ return 1/gsl_ran_gamma (r, asig, 1/bsig);
 //return 1/rgamma (asig, 1/bsig);
 }
 
-double Beta(double *** data,_Bool *** Time,int h,int l, double *beta,double sigma2,double mu,double C,double c_beta,_Bool*** rho, int *nbrprot,int *P,int* N,int nbrcov, int nbrgrp,double lower,int *signCoef,const gsl_rng * r){
+double Beta(double *** data,_Bool *** Time,int h,int l, double *beta,double sigma2,
+            double mu,double C,double c_beta,_Bool*** rho,
+            int *nbrprot,int *P,int* N,int nbrcov, int nbrgrp,double lower,int *signCoef,const gsl_rng * r){
+    //P is the number of proteins per cell type (sensitive and resistant)
+    //nbrprot number of proteins in group per cell type (sensitive and resistant)
+    //n is the size of covariates,
+    
+    int i,l1;
+    double tim=0;double t2=0;
+    int j,re;
+    for (re=0;re<nbrgrp;re++){
+        double t22=0;
+        for (j=0;j<N[re];j++){
+            tim+=(nbrprot[re])*pow(signCoef[l]*Time[re][j][l],2);
+            t22+=sqrt(nbrprot[re])*sqrt(C/(N[re]*C+1))*signCoef[l]*Time[re][j][l];
+        }
+        t2+=pow(t22,2);
+    }
+    tim=tim-t2;
+    double  sigma2beta=sigma2/(1/c_beta+tim);
+    double yy,yestj;
+    double timy=0;
+    double sumyx=0;
+    for (re=0;re<nbrgrp;re++){
+        double sumy=0;double sumt=0;
+        for (j=0;j<N[re];j++){
+            yy=0;yestj=0;
+            for (l1=0;l1<nbrcov;l1++){
+                if (l1!=l){
+                    yestj+=(beta[l1]*signCoef[l1]*Time[re][j][l1]);
+                }
+            }
+            yestj+=mu;
+            for (i=0;i<P[re];i++){
+                if (rho[re][i][h]==1){
+                    yy+=data[re][i][j]-yestj;
+                }
+            }
+            timy+=signCoef[l]*Time[re][j][l]*yy;
+            sumt+=(C/(N[re]*C+1))*signCoef[l]*Time[re][j][l];
+            sumy+=yy;
+        }
+        sumyx+=sumt*sumy;
+        
+    }
+    double mubeta=sigma2beta*(lower/c_beta+(timy-sumyx))/sigma2;
+   // printf("\nLower=%lf= ",lower);
+    //printf("Sigma2=%lf= ",sigma2);
+    //printf("Prod=%lf=",timy-sumyx);
+    //printf("SigBeta=%lf= ",sqrt(sigma2beta));
+    //printf("muBeta=%lf= ",mubeta);
+    // printf("H=%d= \n",h);
+    //return Truncate(mubeta,sqrt(sigma2beta), lower, r);
+    
+    return r_lefttruncnorm(lower, mubeta,sqrt(sigma2beta),r);
+    
+}
+
+
+
+double Beta1(double *** data,_Bool *** Time,int h,int l, double *beta,double sigma2,
+            double mu,double C,double c_beta,_Bool*** rho, 
+            int *nbrprot,int *P,int* N,int nbrcov, int nbrgrp,double lower,int *signCoef,const gsl_rng * r){
 //P is the number of proteins per cell type (sensitive and resistant)
 //nbrprot number of proteins in group per cell type (sensitive and resistant)
 //n is the size of covariates,  
@@ -164,8 +227,14 @@ sumy+=yy;
 }
 }
 double mubeta=sigma2beta*(lower/c_beta+(timy-sumt*sumy))/sigma2;
+    printf("\nLower=%lf= ",lower);
+    printf("Sigma2=%lf= ",sigma2);
+    printf("Prod=%lf=",timy-sumt*sumy);
+printf("SigBeta=%lf= ",sqrt(sigma2beta));
+    printf("muBeta=%lf= \n",mubeta);
+//return Truncate(mubeta,sqrt(sigma2beta), lower, r);
 
-return Truncate(mubeta,sqrt(sigma2beta), lower, r);
+return r_lefttruncnorm(lower, mubeta,sqrt(sigma2beta),r);
 
 }
 
@@ -220,29 +289,47 @@ return logpost;
 }
 
 double Lower1(double  lower, double beta,double  sigma2, double c_beta,double a,double b,double * accept,const gsl_rng * r){
-double var=0.01;
-double betaold=lower/var;
-double alphaold=betaold*lower;
-double lowerprop=gsl_ran_gamma (r, alphaold, 1/betaold);
+//double var=0.01;
+double var=0.1;
+double betaold=lower/var+0.0001;
+double alphaold=betaold*lower+0.0001;
+//printf("Betaold=%lf\n",betaold);
+//printf("Alphaold=%lf\n",alphaold);
+//double lowerprop=MAX(gsl_ran_gamma (r, alphaold, 1/betaold),gsl_ran_flat (r, 0, 0.05));
+double lowerprop=gsl_ran_gamma (r, alphaold, 1/betaold)+gsl_ran_flat (r, 0, 0.05);
+      // printf("lowerprop=%lf ",lowerprop);
 //double lowerprop=rgamma (alphaold, 1/betaold);
+
+
+//printf("Prop=%lf\n",lowerprop);
 double betanew=lowerprop/var;
 double alphanew=lowerprop*betanew;
 
 double logliknew=0;double loglikold=0;
-loglikold=-0.5*pow(beta-lower,2)/(pow(c_beta,2)*sigma2);
-logliknew=-0.5*pow(beta-lowerprop,2)/(pow(c_beta,2)*sigma2);
-double difflogprop=log(gsl_ran_gamma_pdf(lower,alphanew,1/betanew))-log(gsl_ran_gamma_pdf(lowerprop,alphaold,1/betaold));
-//double difflogprop=dgamma(lower,alphanew,1/betanew,1)-dgamma(lowerprop,alphaold,1/betaold,1);
+    //loglikold=-0.5*pow(beta-lower,2)/(pow(c_beta,2)*sigma2);
+    //logliknew=-0.5*pow(beta-lowerprop,2)/(pow(c_beta,2)*sigma2);
+loglikold=-0.5*pow(beta-lower,2)/(c_beta*sigma2);
+logliknew=-0.5*pow(beta-lowerprop,2)/(c_beta*sigma2);
 
+//double difflogprop=log(gsl_ran_gamma_pdf(lower,alphanew,1/betanew))-log(gsl_ran_gamma_pdf(lowerprop,alphaold,1/betaold));
+//double difflogprop=dgamma(lower,alphanew,1/betanew,1)-dgamma(lowerprop,alphaold,1/betaold,1);
+double difflogprop=alphanew*log(betanew)-gsl_sf_lngamma (alphanew)+
+  (alphanew-1)*log(lower)-betanew*lower-((alphaold-1)*log(lowerprop)-betaold*lowerprop+alphaold*log(betaold)-gsl_sf_lngamma (alphaold));
+//x^{a-1} e^{-x/b} dx
+//printf("Difflog1=%lf\n",difflogprop);
 double diff=difflogprop+logliknew-loglikold+(a-1)*(log(lowerprop)-log(lower))-b*(lowerprop-lower);
+//printf("LogLower=%lf\n",log(lowerprop));
 double  uni=gsl_ran_flat (r, 0, 1);
 //double  uni=runif(0,1);
 if (log(uni)<diff){
 lower=lowerprop;
 *accept+=1;
 }
+   // printf("Bet=%lf ",beta);
+    //printf("Lower=%lf\n",lower);
 return lower;
 }
+
 
 
 

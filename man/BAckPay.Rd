@@ -8,8 +8,8 @@ BAyesian mixture model for identifying Clusters of features (e.g. proteins) with
 Calculate (i) the marginal posterior probabilities of inclusions for each feature, and (ii) estimated false discovery rate for detecting differential features.  
 }
 \usage{
-BAckPay(data = data, Ind.Var = Ind.Var, Expe.Var = NULL, sample = 10000, 
-burnin = 1000, a.tau = a.tau, b.tau = b.tau, c.h = 0.5, b.beta = 0.1)
+BAckPay(data=data, Ind.Var=Ind.Var, Expe.Var=NULL, sample=10000, burnin=1000,
+a.tau=a.tau,b.tau=b.tau,c.h=0.5,b.beta=0.1,alpha.h=c(20,20))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -41,6 +41,8 @@ Total number of MCMC draws. It must be larger than burnin.
 }
   \item{b.beta }{Variance hyperparameter of the effects \eqn{\beta_{hl}}'s. This parameter is involved in capturing positive correlations between features within the same cluster.
 }
+  \item{alpha.h }{A vector of dimension 2 that defines hyperparameters \eqn{\alpha_{h}}'s of the dirichlet distribution prior imposed on the cluster probabilities \eqn{\pi_h}'s. More sepcifically, \eqn{\alpha_{h}} for the "zero"-cluster (i.e cluster without covariate effect) is alpha.h[2] and  \eqn{\alpha_{h}}=alpha.h[1] for other clusters.  
+}
 }
 \details{
 The function will return several R objects, which can be assigned to a variable. To see the results, use the ``$" operator. 
@@ -52,6 +54,9 @@ The function will return several R objects, which can be assigned to a variable.
 	}
 	\item{ProbProtGrp}{ Estimated (joint) marginal  posterior probabilities of proteins for patterns or groups (jMPP). It's a matrix of size \eqn{q\times p} where \eqn{q=H^{T}=3^{(q-1)*T}} is the total number of patterns or groups. For instance, if \emph{Ind.Var} has two modalities: Resistant and Sensitive, and the experimental variable has also two modalities: Time 0h and 48h. Hence group \emph{Up-Up} is the pattern or group of features that go up from Resistance to Sensitive for both times 0h and 48h.} 
 %% ...
+}
+\references{
+Thierry Chekouo et al (2019), \emph{Investigating Protein Patterns in Human Leukemia Cell Line Experiments: A Bayesian Approach for Extremely Small Sample Sizes}, \emph{submitted}.
 }
 %\references{
 %% ~put references to the literature/web site here ~
@@ -75,7 +80,8 @@ Gen=Generate(NbrModCov=2,NbrGps=3,p=1000,nbrDuplic=1,seed=1)
 data=Gen$data
 IndVar=as.factor(Gen$Ind.Var);
 ExpVar=as.factor(Gen$Expe.Var);
-Result=BAckPay(data=data,Ind.Var=IndVar,Expe.Var=ExpVar, sample=10000,burnin=5000, a.tau=8,b.tau=10);
+Result=BAckPay(data=data,Ind.Var=IndVar,Expe.Var=ExpVar, sample=10000,burnin=5000, 
+a.tau=3,b.tau=10,b.beta=0.01);
 round(Result$probDiff[1:10],digits=4)
 dim(Result$rhoMean)
 round(head(Result$rhoMean[1,,]),digits=2)
@@ -85,8 +91,8 @@ library(AUC)
 KnownRho=Gen$RhoKnown ## true clustering memberships
 H=3^(length(unique(IndVar))-1);
 rhodiffTrue=1-apply(KnownRho[,,(H+1)/2],2,prod)
-AUC=auc(roc(Result$probDiff, as.factor(rhodiffTrue)))
-AUC
+AUC1=AUC::auc(roc(Result$probDiff, as.factor(rhodiffTrue)))
+AUC1
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

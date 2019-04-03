@@ -11,13 +11,16 @@
 #include <R.h>
 #include <Rmath.h>
 
-void generedata(int *nbrTimeMod, int *nbrResistMod1,int *TimePoint,int * Resist, int *p1, double * yv,int *nbrsampl1,double* beta,int *seed,int * Rho,double* sig){
+void generedata(int *nbrTimeMod, int *nbrResistMod1,int *TimePoint,int * Resist, int *p1, 
+                double * yv,int *nbrsampl1,int *vary1,double *probInit,
+                double* beta,int *seed,int * Rho,double* sig){
  GetRNGstate();
 int l,h,i,j,l1;
 int p=p1[0];
 int nbrsampl=nbrsampl1[0];
 int nbrResistMod=nbrResistMod1[0];
 int n=nbrResistMod*nbrsampl*nbrTimeMod[0];
+int vary=vary1[0];
 double ** y=dmatrix(0, p-1,0,n-1);
 gsl_rng * r = gsl_rng_alloc (gsl_rng_rand48);
 long seedd=*seed;
@@ -75,11 +78,11 @@ TimeCovRes[l1][j][l]=TimeCov[idxRes[l1][j]][l];
 
 
 int H=pow(3,NbrCov);
-double probInit[H];
+//double probInit[H];
 int ** SignCoef=malloc(H*sizeof(int *));
 for (h=0;h<H;h++){
 SignCoef[h]=malloc(NbrCov*sizeof(int));
-probInit[h]=1.0/H;
+//probInit[h]=1.0/H;
 }
 int v[3]={1,0,-1};
 Permutations(SignCoef,v, 3,NbrCov);
@@ -110,16 +113,18 @@ mu[h][i]=gsl_ran_gaussian (r, 0.1);
 }
 }
 double err=0;
-double xb;
+double xb;double bet;
 for (i=0;i<p;i++){
 j1=0;
 for (l1=0;l1<NbrGps;l1++){
+  if (vary==1) bet=beta[i];
+  else bet=beta[l1];
 for (j=0;j<nbrTimeMod[0]*nbrsampl;j++){
 for (h=0;h<H;h++){
 if (rho[l1][i][h]==1){ 
 xb=0;
 for (l=0;l<NbrCov;l++){
-xb+=TimeCovRes[l1][j][l]*SignCoef[h][l]*beta[i];
+xb+=TimeCovRes[l1][j][l]*SignCoef[h][l]*bet;
 }
 y[i][j1]=mu[h][i]+xb;
 err=gsl_ran_gaussian (r, sig[i]);

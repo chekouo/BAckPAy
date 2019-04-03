@@ -14,7 +14,9 @@
 #include "myfunction.h"
 #include <R.h>
 #include <Rmath.h>
-void  mainfunction(int *p1, int *n1,int *NbrGps1,double * ProtExp1, int * Time, int  * Resist,int *sample1,int *burnin1,double *atau, double *btau, double *c_h,double *b_beta,  double * rhoMean1, double * ProbProt1,double * probDiff) {
+void  mainfunction(int *p1, int *n1,int *NbrGps1,double * ProtExp1, int * Time, int  * Resist,int *sample1,int *burnin1,double *atau, 
+                   double *btau, double *c_h,double *b_beta,double *alpha,  double * rhoMean1, double * ProbProt1,double * probDiff,
+                   double * BetaMean1, double *sigma2Mean,double*muMean, double *Pih) {
 GetRNGstate();
 //Time is the independent variable
 //resist is the experimental variable (confounding variable)
@@ -29,7 +31,9 @@ Rprintf("The number of samples is %d\n",n);
 int modal[n];int nbrmodal=n;
 for (j=0;j<n;j++){
 modal[j]=Time[j];
+  printf("%d ", Time[j]);
 }
+printf("\n");
 uniqvalues(modal,&nbrmodal);
 Rprintf("The number of modalities of the indep. var. is %d\n",nbrmodal);
 int idx[nbrmodal];
@@ -41,6 +45,7 @@ int NbrGps=NbrGps1[0];
 Rprintf("The number of modalities of the Experimental var.  is %d\n",NbrGps);
 
 double a=(n+NbrCov)/2.0;double b=1/pow(H,NbrCov/n);
+// a=0.1;b=0.1;
 long seed=100;
 gsl_rng * r = gsl_rng_alloc (gsl_rng_rand48);
 gsl_rng_set (r, seed);
@@ -69,8 +74,11 @@ if (Time[j]==modal[ss])
 te+=1; 
 }
 if (te>0) TimeCov[j][l1]=1;
+printf("%d ", TimeCov[j][l1]);
 }
+printf("\n");
 }
+
 
 
 int *N=malloc(NbrGps*sizeof(int));
@@ -130,15 +138,15 @@ int **clust=malloc(NbrGps*sizeof(int*));
 for (l1=0;l1<NbrGps;l1++){
 clust[l1]=  malloc(P[l1]*sizeof(int));
 }
-double * alpha=malloc(H*sizeof(double));
+//double * alpha=malloc(H*sizeof(double));
 double * C=malloc(H*sizeof(double));
 double ** beta=dmatrix(0,H-1,0, NbrCov-1);
 double ** lower=dmatrix(0,H-1,0, NbrCov-1);
 double ** betaMean=dmatrix(0,H-1,0, NbrCov-1);
 double * mu=malloc(H*sizeof(double));
-double * muMean=malloc(H*sizeof(double));
+//double * muMean=malloc(H*sizeof(double));
 double * sigma2=malloc(H*sizeof(double));
-double * sigma2Mean=malloc(H*sizeof(double));
+//double * sigma2Mean=malloc(H*sizeof(double));
 double sumalpha=0;
 double al=atau[0];
 double bl=btau[0];
@@ -154,8 +162,8 @@ mu[h]=0;muMean[h]=0;sigma2Mean[h]=0;
 C[h]=c_h[0];
 sigma2[h]=1;
 probInit[h]=1.0/H;
-double alphah=20;
-alpha[h]=alphah;
+//double alphah=20;
+//alpha[h]=alphah;
 sumalpha+=alpha[h];
 for (l=0;l<NbrCov;l++){
 lower[h][l]=lower1*abs(SignCoef[h][l]);
@@ -254,10 +262,11 @@ ProbProt[h1][i]+=1;
 }
 }
 for (h=0;h<H;h++){
-
+  if (nbrprot[h]>=2){
 mu[h]=Mu(ProtExpreResist,TimeCovRes,h, beta[h],sigma2[h],C[h],c_mu,rho, nbrprotRes[h],P,N,NbrCov,NbrGps,SignCoef[h],r);
 sigma2[h]=Sigma2(ProtExpreResist,TimeCovRes, h, beta[h],mu[h],C[h],a,b,rho,nbrprotRes[h],P,N,NbrCov,NbrGps,SignCoef[h],r);
-
+  }
+//printf("Sigma2=%lf",sigma2[h]);
 for (l=0;l<NbrCov;l++){
 if (SignCoef[h][l]!=0){
 if (nbrprot[h]>=2){
@@ -266,18 +275,22 @@ lower[h][l]=Lower1(lower[h][l], beta[h][l],sigma2[h],c_beta, al,bl,&acceptLower,
 lower[h][l]=gsl_ran_gamma (r, al, 1/bl);
 //lower[h][l]=rgamma (al, 1/bl);
 }
+//printf("Lower=%lf\n",lower[h][l]);
+if (nbrprot[h]>=2){
 beta[h][l]=Beta(ProtExpreResist,TimeCovRes,h,l, beta[h],sigma2[h], mu[h],C[h], c_beta, rho, nbrprotRes[h], P, N,NbrCov,NbrGps, lower[h][l],SignCoef[h], r);
+}
 if (s>=burnin){
 beta_sample[s-burnin][h][l]=beta[h][l];
 }
 }
 }
 if (s>=burnin){
+Pih[h]+=nbrprot[h];
 muMean[h]+=mu[h];
 sigma2Mean[h]+=sigma2[h];
 for (l=0;l<NbrCov;l++){
 if (SignCoef[h][l]!=0){
-betaMean[h][l]+=beta[h][l];
+betaMean[h][l]+=SignCoef[h][l]*beta[h][l];
 }}
 }
 }
@@ -286,16 +299,43 @@ if (s%(sample/5)==1){
 Rprintf("The number of MCMC iterations is %d\n",s);
 Rprintf("\n\n");
 R_CheckUserInterrupt();
+for (l=0;l<NbrCov;l++){
+  printf("Beta=\n");
+  for (h=0;h<H;h++){
+    printf("%lf ", SignCoef[h][l]*beta[h][l]);
+  }
+  printf("\nLower=\n");
+  for (h=0;h<H;h++){
+    printf("%lf ", SignCoef[h][l]*lower[h][l]);
+  }
+}
+    printf("Nbr of Elements=\n");
+    for (h=0;h<H;h++){
+        printf("%d ",nbrprot[h]);
+    }
+    printf("\n");
+    printf("Nbr of Elements per resistant cells=\n");
+    for (l1=0;l1<NbrGps;l1++){
+        for (h=0;h<H;h++){
+            printf("%d ",nbrprotRes[h][l1]);
+        }
+        printf("\n");
+    }
+
 } // end if 
 
 }
 
 //process the results
+int hh=0;
 for (h=0;h<H;h++){
 for (l=0;l<NbrCov;l++){
 betaMean[h][l]=betaMean[h][l]/(sample-burnin);
+BetaMean1[hh]=betaMean[h][l];
+  hh++;
 }
 sigma2Mean[h]=sigma2Mean[h]/(sample-burnin);
+Pih[h]=Pih[h]/(sample-burnin);
 muMean[h]=muMean[h]/(sample-burnin);
 for (l1=0;l1<NbrGps;l1++){
 for (i=0;i<p;i++){
@@ -313,7 +353,7 @@ ProbProt[h1][i]=ProbProt[h1][i]/(sample-burnin);
 
 free_dmatrix(ProtExp,0, p-1,0,n-1);
 free_dmatrix(beta,0,H-1, 0,NbrCov-1);
-free(mu);free(sigma2);free(alpha);
+free(mu);free(sigma2);//free(alpha);
 free_dmatrix(betaMean,0,H-1, 0,NbrCov-1);
 free_dmatrix(lower,0,H-1, 0,NbrCov-1);
 
@@ -343,7 +383,7 @@ free_dmatrix(ProtExpreResist[l1],0, P[l1]-1,0,N[l1]-1);
 free(clust[l1]);
 }
 free(ProtExpreResist);
-gsl_rng_free (r);free(muMean);free(sigma2Mean);
+gsl_rng_free (r);//free(muMean);free(sigma2Mean);
 free(C);
 free(rhoMean);
 free(rho);

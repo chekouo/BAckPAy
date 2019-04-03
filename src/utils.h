@@ -1,5 +1,9 @@
 #include <stddef.h>
-
+#include <gsl/gsl_rng.h>
+double nrs_a_inf(double a,const gsl_rng * r);
+double ers_a_inf(double a,const gsl_rng * r);
+double r_lefttruncnorm(double a, double mean, double sd,const gsl_rng * r) ;
+double r_righttruncnorm(double b, double mean, double sd,const gsl_rng * r);
 void multinomial (size_t K,unsigned int  N, const double p[], unsigned int n[]); 
 void sortd(int n,double *x,int *idx);
 double auc(int n, double * esti,_Bool class[n]);
