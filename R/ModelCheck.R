@@ -66,30 +66,5 @@ ModelCheck=function(y, Backpay,Ind.Var=Ind.Var, Expe.Var=NULL,ch=0.5){
   test$p.value
 }
 
-pmixnorm <- function(y,Ind.Var=Ind.Var, Expe.Var=NULL,k, mu=0,Beta=0,sigma2=1){
-  ## K is the number of experimental conditions
-  ## H is the number of clusters
-  cdf=1;
-  #library("mvtnorm")
-  NbrGrps=length(unique(Expe.Var))
-  Nk=table(Expe.Var)
-  Xcov=list();
-  nbrcov=length(unique(Ind.Var))-1;  #H=3^nbrcov;
-  C=matrix(1,nbrcov,nbrcov);
-  C=C*lower.tri(C,diag = T)
-  #for (k in 1:NbrGrps){
-  IdK=Ind.Var[Expe.Var==k-1]
-  Xcov=matrix(0,Nk[k],nbrcov)
-  for (i in 1:Nk[k]){
-    for (l in 1:nbrcov){
-      Xcov[i,l]=(IdK[i]==l-1)
-    }
-  }
-  Xcov=Xcov%*%C;
-  yk=y[Expe.Var==k-1]
-  pnorm(as.numeric(yk),mean=as.vector(Xcov%*%Beta+mu),sd=sqrt(sigma2))
-  #pmvnorm(upper=as.numeric(yk), mean=as.vector(Xcov%*%Beta+mu), 
-     #     sigma=sigma2*(ch+diag(Nk[k])))
-  
-}
+
 
